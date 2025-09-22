@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>introduction</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #e6d5eb;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .intro-section {
+            display: flex;
+            padding: 50px;
+            gap: 40px;
+            align-items: center;
+        }
+        
+        .text-content {
+            flex: 1;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 10px;
+            color: #5a3a6b;
+        }
+        
+        .welcome {
+            font-size: 2rem;
+            color: #7a5a8a;
+            font-weight: 500;
+        }
+        
+        .image-container {
+            flex-shrink: 0;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid #e6d5eb;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .hobbies-section {
+            padding: 40px 50px;
+            background-color: #f5f0f8;
+            border-top: 1px solid #e6d5eb;
+        }
+        
+        .hobbies-section h2 {
+            font-size: 2rem;
+            color: #5a3a6b;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .hobbies-content {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        @media (max-width: 768px) {
+            .intro-section {
+                flex-direction: column-reverse;
+                text-align: center;
+                padding: 30px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .welcome {
+                font-size: 1.5rem;
+            }
+            
+            .image-container {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .hobbies-section {
+                padding: 30px;
+            }
+            
+            .hobbies-section h2 {
+                font-size: 1.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .welcome {
+                font-size: 1.2rem;
+            }
+            
+            .image-container {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .hobbies-section {
+                padding: 20px;
+            }
+            
+            .hobbies-section h2 {
+                font-size: 1.5rem;
+            }
+            
+            .hobbies-content {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <section class="intro-section">
+            <div class="text-content">
+                <h1>Hi, I'm Nathan.</h1>
+                <p class="welcome">Welcome.</p>
+            </div>
+            <div class="image-container">
+                <img src="https://cdn.discordapp.com/avatars/1352995832164520029/0094e02d56be4cc5bf130db764255cbb.png?size=1024" alt="Nathan's Profile Picture" class="profile-image">
+            </div>
+        </section>
+        
+        <section class="hobbies-section">
+            <h2>Hobbies And Interests</h2>
+            <p class="hobbies-content">um, i like making discord bots and things python related and im pretty cool. i like roblox and cs2 and thats about it for me</p>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const title = document.querySelector('h1');
+            title.style.opacity = '0';
+            title.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                title.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                title.style.opacity = '1';
+                title.style.transform = 'translateY(0)';
+            }, 300);
+            
+            const hobbiesSection = document.querySelector('.hobbies-section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            });
+            
+            hobbiesSection.style.opacity = '0';
+            hobbiesSection.style.transform = 'translateY(20px)';
+            hobbiesSection.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+            
+            observer.observe(hobbiesSection);
+        });
+    </script>
+</body>
+</html>
