@@ -206,6 +206,31 @@
             color: #555;
         }
         
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            background-color: #f5f0f8;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .connection-connected { background-color: #3ba55c; }
+        .connection-connecting { background-color: #faa81a; }
+        .connection-disconnected { background-color: #ed4245; }
+        
         @media (max-width: 768px) {
             .intro-section {
                 flex-direction: column-reverse;
@@ -237,6 +262,11 @@
             
             .hobbies-section h2, .soooo-section h2 {
                 font-size: 1.8rem;
+            }
+            
+            .connection-status {
+                top: 10px;
+                right: 10px;
             }
         }
         
@@ -274,6 +304,11 @@
     </style>
 </head>
 <body>
+    <div id="connection-status" class="connection-status" style="display: none;">
+        <div id="connection-dot" class="connection-dot connection-connecting"></div>
+        <span id="connection-text">Connecting...</span>
+    </div>
+    
     <div class="container">
         <section class="intro-section">
             <div class="text-content">
@@ -282,7 +317,7 @@
                 
                 <div id="discord-status" class="discord-status">
                     <div id="status-dot" class="status-dot status-offline"></div>
-                    <span id="status-text">Loading Discord status...</span>
+                    <span id="status-text">Connecting to Discord...</span>
                 </div>
                 
                 <div id="custom-status" class="custom-status">
@@ -351,99 +386,178 @@
                 observer.observe(section);
             });
             
-            fetch('https://api.lanyard.rest/v1/users/1352995832164520029')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const discordData = data.data;
-                        
-                        const statusDot = document.getElementById('status-dot');
-                        const statusText = document.getElementById('status-text');
-                        
-                        switch(discordData.discord_status) {
-                            case 'online':
-                                statusDot.className = 'status-dot status-online';
-                                statusText.textContent = 'Online on Discord';
-                                break;
-                            case 'idle':
-                                statusDot.className = 'status-dot status-idle';
-                                statusText.textContent = 'Idle on Discord';
-                                break;
-                            case 'dnd':
-                                statusDot.className = 'status-dot status-dnd';
-                                statusText.textContent = 'Do Not Disturb on Discord';
-                                break;
-                            default:
-                                statusDot.className = 'status-dot status-offline';
-                                statusText.textContent = 'Offline on Discord';
-                        }
-                        
-                        if (discordData.activities && discordData.activities.length > 0) {
-                            const customStatusActivity = discordData.activities.find(activity => 
-                                activity.type === 4 
-                            );
-                            
-                            if (customStatusActivity && customStatusActivity.state) {
-                                const customStatusElement = document.getElementById('custom-status');
-                                const customStatusText = document.getElementById('custom-status-text');
-                                
-                                customStatusText.textContent = customStatusActivity.state;
-                                customStatusElement.style.display = 'block';
-                            }
-                        }
-                        
-                        if (discordData.listening_to_spotify && discordData.spotify) {
-                            const spotifyActivity = document.getElementById('spotify-activity');
-                            const spotifyAlbumArt = document.getElementById('spotify-album-art');
-                            const spotifySong = document.getElementById('spotify-song');
-                            const spotifyArtist = document.getElementById('spotify-artist');
-                            const spotifyAlbum = document.getElementById('spotify-album');
-                            const spotifyProgressBar = document.getElementById('spotify-progress-bar');
-                            const spotifyCurrentTime = document.getElementById('spotify-current-time');
-                            const spotifyTotalTime = document.getElementById('spotify-total-time');
-                            
-                            spotifyAlbumArt.src = discordData.spotify.album_art_url;
-                            spotifySong.textContent = discordData.spotify.song;
-                            spotifyArtist.textContent = `by ${discordData.spotify.artist}`;
-                            spotifyAlbum.textContent = `on ${discordData.spotify.album}`;
-                            
-                            const startTime = discordData.spotify.timestamps.start;
-                            const endTime = discordData.spotify.timestamps.end;
-                            const totalDuration = endTime - startTime;
-                            
-                            function formatTime(ms) {
-                                const seconds = Math.floor(ms / 1000);
-                                const minutes = Math.floor(seconds / 60);
-                                const remainingSeconds = seconds % 60;
-                                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-                            }
-                            
-                            function updateProgress() {
-                                const now = Date.now();
-                                const elapsed = now - startTime;
-                                const progressPercent = Math.min((elapsed / totalDuration) * 100, 100);
-                                
-                                spotifyProgressBar.style.width = `${progressPercent}%`;
-                                spotifyCurrentTime.textContent = formatTime(elapsed);
-                                spotifyTotalTime.textContent = formatTime(totalDuration);
-                                
-                                if (progressPercent < 100) {
-                                    setTimeout(updateProgress, 1000);
-                                }
-                            }
-                            
-                            updateProgress();
-                            
-                            spotifyActivity.style.display = 'flex';
-                        }
+            const userId = '1352995832164520029';
+            let spotifyUpdateInterval = null;
+            
+            const connectionStatus = document.getElementById('connection-status');
+            const connectionDot = document.getElementById('connection-dot');
+            const connectionText = document.getElementById('connection-text');
+            
+            function updateConnectionStatus(status, text) {
+                connectionStatus.style.display = 'flex';
+                connectionDot.className = 'connection-dot connection-' + status;
+                connectionText.textContent = text;
+            }
+            
+            function updateDiscordStatus(data) {
+                const statusDot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+                
+                switch(data.discord_status) {
+                    case 'online':
+                        statusDot.className = 'status-dot status-online';
+                        statusText.textContent = 'Online on Discord';
+                        break;
+                    case 'idle':
+                        statusDot.className = 'status-dot status-idle';
+                        statusText.textContent = 'Idle on Discord';
+                        break;
+                    case 'dnd':
+                        statusDot.className = 'status-dot status-dnd';
+                        statusText.textContent = 'Do Not Disturb on Discord';
+                        break;
+                    default:
+                        statusDot.className = 'status-dot status-offline';
+                        statusText.textContent = 'Offline on Discord';
+                }
+                
+                const customStatusElement = document.getElementById('custom-status');
+                const customStatusText = document.getElementById('custom-status-text');
+                
+                if (data.activities && data.activities.length > 0) {
+                    const customStatusActivity = data.activities.find(activity => 
+                        activity.type === 4
+                    );
+                    
+                    if (customStatusActivity && customStatusActivity.state) {
+                        customStatusText.textContent = customStatusActivity.state;
+                        customStatusElement.style.display = 'block';
                     } else {
-                        document.getElementById('status-text').textContent = 'Error loading Discord status';
+                        customStatusElement.style.display = 'none';
                     }
-                })
-                .catch(error => {
-                    console.error('Error fetching Discord status:', error);
-                    document.getElementById('status-text').textContent = 'Error loading Discord status';
-                });
+                } else {
+                    customStatusElement.style.display = 'none';
+                }
+                
+                const spotifyActivity = document.getElementById('spotify-activity');
+                
+                if (data.listening_to_spotify && data.spotify) {
+                    const spotifyAlbumArt = document.getElementById('spotify-album-art');
+                    const spotifySong = document.getElementById('spotify-song');
+                    const spotifyArtist = document.getElementById('spotify-artist');
+                    const spotifyAlbum = document.getElementById('spotify-album');
+                    
+                    spotifyAlbumArt.src = data.spotify.album_art_url;
+                    spotifySong.textContent = data.spotify.song;
+                    spotifyArtist.textContent = `by ${data.spotify.artist}`;
+                    spotifyAlbum.textContent = `on ${data.spotify.album}`;
+                    
+                    if (spotifyUpdateInterval) {
+                        clearInterval(spotifyUpdateInterval);
+                    }
+                    
+                    spotifyUpdateInterval = setInterval(() => {
+                        updateSpotifyProgress(data.spotify);
+                    }, 1000);
+                    
+                    spotifyActivity.style.display = 'flex';
+                } else {
+                    spotifyActivity.style.display = 'none';
+                    if (spotifyUpdateInterval) {
+                        clearInterval(spotifyUpdateInterval);
+                    }
+                }
+            }
+            
+            function updateSpotifyProgress(spotifyData) {
+                const spotifyProgressBar = document.getElementById('spotify-progress-bar');
+                const spotifyCurrentTime = document.getElementById('spotify-current-time');
+                const spotifyTotalTime = document.getElementById('spotify-total-time');
+                
+                if (!spotifyData.timestamps) return;
+                
+                const startTime = spotifyData.timestamps.start;
+                const endTime = spotifyData.timestamps.end;
+                const totalDuration = endTime - startTime;
+                const now = Date.now();
+                const elapsed = now - startTime;
+                const progressPercent = Math.min((elapsed / totalDuration) * 100, 100);
+                
+                function formatTime(ms) {
+                    const seconds = Math.floor(ms / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                }
+                
+                spotifyProgressBar.style.width = `${progressPercent}%`;
+                spotifyCurrentTime.textContent = formatTime(elapsed);
+                spotifyTotalTime.textContent = formatTime(totalDuration);
+                
+                if (progressPercent >= 100) {
+                    clearInterval(spotifyUpdateInterval);
+                }
+            }
+            
+            function connectWebSocket() {
+                const ws = new WebSocket('wss://api.lanyard.rest/socket');
+                
+                ws.onopen = function() {
+                    updateConnectionStatus('connected', 'Live Updates Connected');
+                    
+                    ws.send(JSON.stringify({
+                        op: 2,
+                        d: {
+                            subscribe_to_id: userId
+                        }
+                    }));
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.op === 1) {
+                        ws.send(JSON.stringify({ op: 3 }));
+                    } else if (data.op === 0) {
+                        updateDiscordStatus(data.d);
+                    }
+                };
+                
+                ws.onclose = function() {
+                    updateConnectionStatus('disconnected', 'Disconnected - Reconnecting...');
+                    
+                    setTimeout(connectWebSocket, 5000);
+                };
+                
+                ws.onerror = function() {
+                    updateConnectionStatus('disconnected', 'Connection Error');
+                };
+            }
+            
+            updateConnectionStatus('connecting', 'Connecting to Discord...');
+            connectWebSocket();
+            
+            setTimeout(() => {
+                if (connectionDot.className.includes('connecting')) {
+                    updateConnectionStatus('disconnected', 'Using Periodic Updates');
+                    
+                    function updateViaRestAPI() {
+                        fetch(`https://api.lanyard.rest/v1/users/${userId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    updateDiscordStatus(data.data);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching Discord status:', error);
+                            });
+                    }
+                    
+                    updateViaRestAPI();
+                    setInterval(updateViaRestAPI, 30000);
+                }
+            }, 10000); 
         });
     </script>
 </body>
