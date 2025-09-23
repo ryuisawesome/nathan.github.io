@@ -1,9 +1,9 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>introduction</title>
+    <title>Nathan - Introduction</title>
     <style>
         * {
             margin: 0;
@@ -56,6 +56,95 @@
             font-size: 2rem;
             color: #7a5a8a;
             font-weight: 500;
+            margin-bottom: 20px;
+        }
+        
+        .discord-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #f5f0f8;
+            border-radius: 10px;
+            width: fit-content;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .status-online { background-color: #3ba55c; }
+        .status-idle { background-color: #faa81a; }
+        .status-dnd { background-color: #ed4245; }
+        .status-offline { background-color: #747f8d; }
+        
+        .spotify-activity {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #1DB954;
+            border-radius: 10px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            max-width: 400px;
+        }
+        
+        .spotify-album-art {
+            width: 60px;
+            height: 60px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+        
+        .spotify-info {
+            flex: 1;
+        }
+        
+        .spotify-song {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .spotify-artist {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        
+        .spotify-album {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+        
+        .spotify-progress {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .spotify-progress-bar {
+            height: 100%;
+            background-color: white;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .spotify-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            opacity: 0.8;
         }
         
         .image-container {
@@ -126,6 +215,11 @@
                 height: 200px;
             }
             
+            .discord-status, .spotify-activity {
+                margin-left: auto;
+                margin-right: auto;
+            }
+            
             .hobbies-section, .soooo-section {
                 padding: 30px;
             }
@@ -160,6 +254,11 @@
             .section-content {
                 font-size: 1.1rem;
             }
+            
+            .spotify-activity {
+                flex-direction: column;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -169,6 +268,28 @@
             <div class="text-content">
                 <h1>Hi, I'm Nathan.</h1>
                 <p class="welcome">Welcome.</p>
+                
+                <div id="discord-status" class="discord-status">
+                    <div id="status-dot" class="status-dot status-offline"></div>
+                    <span id="status-text">Loading Discord status...</span>
+                </div>
+                
+                <div id="spotify-activity" class="spotify-activity" style="display: none;">
+                    <img id="spotify-album-art" src="" alt="Album Art" class="spotify-album-art">
+                    <div class="spotify-info">
+                        <div id="spotify-song" class="spotify-song"></div>
+                        <div id="spotify-artist" class="spotify-artist"></div>
+                        <div id="spotify-album" class="spotify-album"></div>
+                        
+                        <div class="spotify-progress">
+                            <div id="spotify-progress-bar" class="spotify-progress-bar"></div>
+                        </div>
+                        <div class="spotify-time">
+                            <span id="spotify-current-time">0:00</span>
+                            <span id="spotify-total-time">0:00</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="image-container">
                 <img src="https://cdn.discordapp.com/avatars/1352995832164520029/0094e02d56be4cc5bf130db764255cbb.png?size=1024" alt="Nathan's Profile Picture" class="profile-image">
@@ -214,6 +335,86 @@
                 section.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
                 observer.observe(section);
             });
+            
+            fetch('https://api.lanyard.rest/v1/users/1352995832164520029')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const discordData = data.data;
+                        
+                        const statusDot = document.getElementById('status-dot');
+                        const statusText = document.getElementById('status-text');
+                        
+                        switch(discordData.discord_status) {
+                            case 'online':
+                                statusDot.className = 'status-dot status-online';
+                                statusText.textContent = 'Online on Discord';
+                                break;
+                            case 'idle':
+                                statusDot.className = 'status-dot status-idle';
+                                statusText.textContent = 'Idle on Discord';
+                                break;
+                            case 'dnd':
+                                statusDot.className = 'status-dot status-dnd';
+                                statusText.textContent = 'Do Not Disturb on Discord';
+                                break;
+                            default:
+                                statusDot.className = 'status-dot status-offline';
+                                statusText.textContent = 'Offline on Discord';
+                        }
+                        
+                        if (discordData.listening_to_spotify && discordData.spotify) {
+                            const spotifyActivity = document.getElementById('spotify-activity');
+                            const spotifyAlbumArt = document.getElementById('spotify-album-art');
+                            const spotifySong = document.getElementById('spotify-song');
+                            const spotifyArtist = document.getElementById('spotify-artist');
+                            const spotifyAlbum = document.getElementById('spotify-album');
+                            const spotifyProgressBar = document.getElementById('spotify-progress-bar');
+                            const spotifyCurrentTime = document.getElementById('spotify-current-time');
+                            const spotifyTotalTime = document.getElementById('spotify-total-time');
+                            
+                            spotifyAlbumArt.src = discordData.spotify.album_art_url;
+                            spotifySong.textContent = discordData.spotify.song;
+                            spotifyArtist.textContent = `by ${discordData.spotify.artist}`;
+                            spotifyAlbum.textContent = `on ${discordData.spotify.album}`;
+                            
+                            const startTime = discordData.spotify.timestamps.start;
+                            const endTime = discordData.spotify.timestamps.end;
+                            const totalDuration = endTime - startTime;
+                            
+                            function formatTime(ms) {
+                                const seconds = Math.floor(ms / 1000);
+                                const minutes = Math.floor(seconds / 60);
+                                const remainingSeconds = seconds % 60;
+                                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                            }
+                            
+                            function updateProgress() {
+                                const now = Date.now();
+                                const elapsed = now - startTime;
+                                const progressPercent = Math.min((elapsed / totalDuration) * 100, 100);
+                                
+                                spotifyProgressBar.style.width = `${progressPercent}%`;
+                                spotifyCurrentTime.textContent = formatTime(elapsed);
+                                spotifyTotalTime.textContent = formatTime(totalDuration);
+                                
+                                if (progressPercent < 100) {
+                                    setTimeout(updateProgress, 1000);
+                                }
+                            }
+                            
+                            updateProgress();
+                            
+                            spotifyActivity.style.display = 'flex';
+                        }
+                    } else {
+                        document.getElementById('status-text').textContent = 'Error loading Discord status';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching Discord status:', error);
+                    document.getElementById('status-text').textContent = 'Error loading Discord status';
+                });
         });
     </script>
 </body>
