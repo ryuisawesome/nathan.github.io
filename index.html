@@ -81,6 +81,17 @@
         .status-dnd { background-color: #ed4245; }
         .status-offline { background-color: #747f8d; }
         
+        .custom-status {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background-color: #f0e6f5;
+            border-radius: 10px;
+            border-left: 4px solid #7a5a8a;
+            font-style: italic;
+            max-width: 400px;
+            display: none;
+        }
+        
         .spotify-activity {
             margin-top: 15px;
             padding: 15px;
@@ -215,7 +226,7 @@
                 height: 200px;
             }
             
-            .discord-status, .spotify-activity {
+            .discord-status, .custom-status, .spotify-activity {
                 margin-left: auto;
                 margin-right: auto;
             }
@@ -272,6 +283,10 @@
                 <div id="discord-status" class="discord-status">
                     <div id="status-dot" class="status-dot status-offline"></div>
                     <span id="status-text">Loading Discord status...</span>
+                </div>
+                
+                <div id="custom-status" class="custom-status">
+                    <span id="custom-status-text"></span>
                 </div>
                 
                 <div id="spotify-activity" class="spotify-activity" style="display: none;">
@@ -361,6 +376,20 @@
                             default:
                                 statusDot.className = 'status-dot status-offline';
                                 statusText.textContent = 'Offline on Discord';
+                        }
+                        
+                        if (discordData.activities && discordData.activities.length > 0) {
+                            const customStatusActivity = discordData.activities.find(activity => 
+                                activity.type === 4 
+                            );
+                            
+                            if (customStatusActivity && customStatusActivity.state) {
+                                const customStatusElement = document.getElementById('custom-status');
+                                const customStatusText = document.getElementById('custom-status-text');
+                                
+                                customStatusText.textContent = customStatusActivity.state;
+                                customStatusElement.style.display = 'block';
+                            }
                         }
                         
                         if (discordData.listening_to_spotify && discordData.spotify) {
